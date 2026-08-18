@@ -64,7 +64,22 @@ function initPeer() {
                     { urls: 'stun:stun2.l.google.com:19302' },
                     { urls: 'stun:stun3.l.google.com:19302' },
                     { urls: 'stun:stun4.l.google.com:19302' },
-                    { urls: 'stun:global.stun.twilio.com:3478' }
+                    { urls: 'stun:global.stun.twilio.com:3478' },
+                    {
+                        urls: 'turn:openrelay.metered.ca:80',
+                        username: 'openrelayproject',
+                        credential: 'openrelayproject'
+                    },
+                    {
+                        urls: 'turn:openrelay.metered.ca:443',
+                        username: 'openrelayproject',
+                        credential: 'openrelayproject'
+                    },
+                    {
+                        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+                        username: 'openrelayproject',
+                        credential: 'openrelayproject'
+                    }
                 ]
             }
         });
@@ -90,15 +105,23 @@ function initPeer() {
             console.error('PeerJS error:', err);
             if (statusDot) statusDot.className = 'status-dot offline';
             if (statusText) statusText.innerText = 'Erro de Rede (' + err.type + ')';
-            showToast('Erro de rede: ' + err.type, 'error');
+            if (err.type === 'peer-unavailable') {
+                showToast('O ID informado não está online ou foi digitado incorretamente.', 'error');
+            } else {
+                showToast('Erro de rede: ' + err.type, 'error');
+            }
         });
 
+        // Host: Handle incoming Data Connections from Viewers
         peer.on('connection', (conn) => {
             activeDataConnections.add(conn);
             updateViewerCount();
 
             conn.on('open', () => {
+                // Send current broadcast status to viewer
                 conn.send({ type: 'STATUS', isLive: isBroadcasting });
+
+                // If host is already broadcasting, call viewer with localStream
                 if (isBroadcasting && localStream) {
                     const mediaCall = peer.call(conn.peer, localStream);
                     activeMediaCalls.add(mediaCall);
@@ -120,13 +143,15 @@ function initPeer() {
             });
         });
 
-        // Handle incoming calls
+        // Viewer / Host: Handle incoming Media Calls
         peer.on('call', (call) => {
-            showToast('Recebendo transmissão de amigo...', 'info');
+            activeMediaCalls.add(call);
 
             if (isBroadcasting && localStream) {
+                // If we are Host and receive a media call, answer with localStream
                 call.answer(localStream);
             } else {
+                // If we are Viewer, answer call (no local stream needed)
                 call.answer();
             }
 
@@ -135,7 +160,11 @@ function initPeer() {
             });
 
             call.on('close', () => {
-                resetPlayer('Transmissão Encerrada', 'O compartilhamento de tela do amigo foi encerrado.');
+                resetPlayer('Transmissão Encerrada', 'O compartilhamento de tela foi encerrado.');
+            });
+
+            call.on('error', (err) => {
+                console.error('Media call error:', err);
             });
         });
 
@@ -160,10 +189,12 @@ function handleRemoteStream(remoteStream) {
         });
     }
 
+    if (statusText) statusText.innerText = 'Transmissão Ativa';
+    if (statusDot) statusDot.className = 'status-dot online';
     if (placeholderOverlay) placeholderOverlay.style.display = 'none';
     if (liveTag) liveTag.classList.add('active');
     if (playerInfoText) playerInfoText.innerText = 'Assistindo transmissão em tempo real';
-    showToast('Transmissão do seu amigo conectada!', 'success');
+    showToast('Sinal de vídeo P2P recebido com sucesso!', 'success');
 }
 
 // Host: Toggle Screen Share
@@ -220,7 +251,7 @@ async function startScreenShare() {
 
         showToast('Sua transmissão de tela foi iniciada!', 'success');
 
-        // Broadcast to connected viewers
+        // Automatically call all connected viewers with the new localStream
         activeDataConnections.forEach(conn => {
             conn.send({ type: 'STATUS', isLive: true });
             const mediaCall = peer.call(conn.peer, localStream);
@@ -307,22 +338,23 @@ function connectToHost() {
         return;
     }
 
-    if (statusText) statusText.innerText = 'Conectando ao host...';
-    showToast('Conectando e solicitando transmissão de ' + hostId.substring(0, 8) + '...', 'info');
+    if (statusText) statusText.innerText = 'Conectando ao Host...';
+    showToast('Estabelecendo conexão P2P com ' + hostId.substring(0, 8) + '...', 'info');
 
-    // Data Channel
+    // 1. Establish Data Connection with Host
     const conn = peer.connect(hostId);
 
     conn.on('open', () => {
-        showToast('Conectado ao Host! Solicitando tela...', 'success');
-        if (statusText) statusText.innerText = 'Conectado ao Host';
+        showToast('Conectado ao Host! Solicitando vídeo...', 'success');
+        if (statusText) statusText.innerText = 'Conectado ao Host (Aguardando Vídeo)';
         conn.send({ type: 'REQUEST_STREAM' });
     });
 
     conn.on('data', (data) => {
         if (data && data.type === 'STATUS') {
             if (!data.isLive) {
-                resetPlayer('Aguardando Transmissão', 'O host está online, mas ainda não iniciou o compartilhamento de tela.');
+                resetPlayer('Host Online - Transmissão Desligada', 'O seu amigo está conectado, mas ainda não clicou no botão "Iniciar Transmissão". Peça a ele para clicar em "Iniciar Transmissão".');
+                showToast('O Host está online, mas ainda não iniciou o compartilhamento de tela.', 'warning');
             }
         }
     });
@@ -335,17 +367,6 @@ function connectToHost() {
     conn.on('error', (err) => {
         console.error('Data connection error:', err);
         showToast('Erro ao conectar ao Host. Verifique se o ID está correto.', 'error');
-    });
-
-    // Media Call to Host
-    const mediaCall = peer.call(hostId, new MediaStream());
-
-    mediaCall.on('stream', (remoteStream) => {
-        handleRemoteStream(remoteStream);
-    });
-
-    mediaCall.on('error', (err) => {
-        console.error('Media call error:', err);
     });
 }
 
