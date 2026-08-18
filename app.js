@@ -1,5 +1,5 @@
 /**
- * Mamute Streamer v1.0.0
+ * Mamute Streamer v1.1.0
  * WebRTC P2P Screen Sharing Application
  */
 
@@ -13,15 +13,20 @@ let activeMediaCalls = new Set();
 let isBroadcasting = false;
 
 // DOM Elements
-let statusDot, statusText, myPeerIdEl, mainVideo, placeholderOverlay;
-let placeholderTitle, placeholderDesc, liveTag, playerInfoText;
+let statusDot, statusText, myPeerIdEl;
+let remoteVideo, localVideo, localPreviewCard;
+let placeholderOverlay, placeholderTitle, placeholderDesc, liveTag, playerInfoText;
 let viewerCountEl, btnToggleShare, unmuteBanner;
 
 function bindElements() {
     statusDot = document.getElementById('status-dot');
     statusText = document.getElementById('status-text');
     myPeerIdEl = document.getElementById('my-peer-id');
-    mainVideo = document.getElementById('main-video');
+
+    remoteVideo = document.getElementById('remote-video');
+    localVideo = document.getElementById('local-video');
+    localPreviewCard = document.getElementById('local-preview-card');
+
     placeholderOverlay = document.getElementById('placeholder-overlay');
     placeholderTitle = document.getElementById('placeholder-title');
     placeholderDesc = document.getElementById('placeholder-desc');
@@ -115,7 +120,10 @@ function initPeer() {
             });
         });
 
+        // Handle incoming calls
         peer.on('call', (call) => {
+            showToast('Recebendo transmissão de amigo...', 'info');
+
             if (isBroadcasting && localStream) {
                 call.answer(localStream);
             } else {
@@ -123,26 +131,11 @@ function initPeer() {
             }
 
             call.on('stream', (remoteStream) => {
-                if (mainVideo) {
-                    mainVideo.srcObject = remoteStream;
-                    mainVideo.muted = false;
-
-                    mainVideo.play().then(() => {
-                        if (unmuteBanner) unmuteBanner.style.display = 'none';
-                    }).catch(err => {
-                        console.warn('Autoplay blocked by browser policy:', err);
-                        if (unmuteBanner) unmuteBanner.style.display = 'flex';
-                    });
-                }
-
-                if (placeholderOverlay) placeholderOverlay.style.display = 'none';
-                if (liveTag) liveTag.classList.add('active');
-                if (playerInfoText) playerInfoText.innerText = 'Assistindo transmissão em tempo real';
-                showToast('Sinal de vídeo recebido com sucesso!', 'success');
+                handleRemoteStream(remoteStream);
             });
 
             call.on('close', () => {
-                resetPlayer('Transmissão Encerrada', 'O compartilhamento de tela foi encerrado.');
+                resetPlayer('Transmissão Encerrada', 'O compartilhamento de tela do amigo foi encerrado.');
             });
         });
 
@@ -153,6 +146,27 @@ function initPeer() {
     }
 }
 
+// Display remote video stream on the main stage
+function handleRemoteStream(remoteStream) {
+    if (remoteVideo) {
+        remoteVideo.srcObject = remoteStream;
+        remoteVideo.muted = false;
+
+        remoteVideo.play().then(() => {
+            if (unmuteBanner) unmuteBanner.style.display = 'none';
+        }).catch(err => {
+            console.warn('Autoplay blocked by browser policy:', err);
+            if (unmuteBanner) unmuteBanner.style.display = 'flex';
+        });
+    }
+
+    if (placeholderOverlay) placeholderOverlay.style.display = 'none';
+    if (liveTag) liveTag.classList.add('active');
+    if (playerInfoText) playerInfoText.innerText = 'Assistindo transmissão em tempo real';
+    showToast('Transmissão do seu amigo conectada!', 'success');
+}
+
+// Host: Toggle Screen Share
 async function toggleScreenShare() {
     if (isBroadcasting) {
         stopScreenShare();
@@ -189,23 +203,24 @@ async function startScreenShare() {
             stopScreenShare();
         };
 
-        if (mainVideo) {
-            mainVideo.srcObject = localStream;
-            mainVideo.muted = true;
-            mainVideo.play();
+        // Display local screen share in PIP preview box
+        if (localVideo) {
+            localVideo.srcObject = localStream;
+            localVideo.muted = true;
+            localVideo.play();
         }
-
-        if (placeholderOverlay) placeholderOverlay.style.display = 'none';
-        if (liveTag) liveTag.classList.add('active');
-        if (playerInfoText) playerInfoText.innerText = 'Sua tela está sendo transmitida';
+        if (localPreviewCard) {
+            localPreviewCard.style.display = 'flex';
+        }
 
         if (btnToggleShare) {
             btnToggleShare.className = 'btn btn-danger';
             btnToggleShare.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg> Parar Transmissão';
         }
 
-        showToast('Transmissão de tela iniciada!', 'success');
+        showToast('Sua transmissão de tela foi iniciada!', 'success');
 
+        // Broadcast to connected viewers
         activeDataConnections.forEach(conn => {
             conn.send({ type: 'STATUS', isLive: true });
             const mediaCall = peer.call(conn.peer, localStream);
@@ -232,6 +247,9 @@ function stopScreenShare() {
 
     isBroadcasting = false;
 
+    if (localVideo) localVideo.srcObject = null;
+    if (localPreviewCard) localPreviewCard.style.display = 'none';
+
     activeDataConnections.forEach(conn => {
         conn.send({ type: 'STATUS', isLive: false });
     });
@@ -244,8 +262,7 @@ function stopScreenShare() {
         btnToggleShare.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg> Iniciar Transmissão';
     }
 
-    resetPlayer('Transmissão Parada', 'Você encerrou a transmissão de tela.');
-    showToast('Transmissão encerrada.', 'info');
+    showToast('Sua transmissão foi encerrada.', 'info');
 }
 
 function mixAudioStreams(screenStream, micStream) {
@@ -270,6 +287,7 @@ function mixAudioStreams(screenStream, micStream) {
     return outputStream;
 }
 
+// Viewer: Connect to Host
 function connectToHost() {
     const hostInput = document.getElementById('host-id-input');
     const hostId = hostInput ? hostInput.value.trim() : '';
@@ -290,12 +308,13 @@ function connectToHost() {
     }
 
     if (statusText) statusText.innerText = 'Conectando ao host...';
-    showToast('Solicitando transmissão de ' + hostId.substring(0, 8) + '...', 'info');
+    showToast('Conectando e solicitando transmissão de ' + hostId.substring(0, 8) + '...', 'info');
 
+    // Data Channel
     const conn = peer.connect(hostId);
 
     conn.on('open', () => {
-        showToast('Conectado ao Host! Solicitando vídeo...', 'success');
+        showToast('Conectado ao Host! Solicitando tela...', 'success');
         if (statusText) statusText.innerText = 'Conectado ao Host';
         conn.send({ type: 'REQUEST_STREAM' });
     });
@@ -318,25 +337,11 @@ function connectToHost() {
         showToast('Erro ao conectar ao Host. Verifique se o ID está correto.', 'error');
     });
 
+    // Media Call to Host
     const mediaCall = peer.call(hostId, new MediaStream());
 
     mediaCall.on('stream', (remoteStream) => {
-        if (mainVideo) {
-            mainVideo.srcObject = remoteStream;
-            mainVideo.muted = false;
-
-            mainVideo.play().then(() => {
-                if (unmuteBanner) unmuteBanner.style.display = 'none';
-            }).catch(err => {
-                console.warn('Autoplay blocked by browser policy:', err);
-                if (unmuteBanner) unmuteBanner.style.display = 'flex';
-            });
-        }
-
-        if (placeholderOverlay) placeholderOverlay.style.display = 'none';
-        if (liveTag) liveTag.classList.add('active');
-        if (playerInfoText) playerInfoText.innerText = 'Assistindo transmissão em tempo real';
-        showToast('Transmissão de vídeo conectada!', 'success');
+        handleRemoteStream(remoteStream);
     });
 
     mediaCall.on('error', (err) => {
@@ -345,7 +350,7 @@ function connectToHost() {
 }
 
 function resetPlayer(title, desc) {
-    if (mainVideo) mainVideo.srcObject = null;
+    if (remoteVideo) remoteVideo.srcObject = null;
     if (placeholderTitle) placeholderTitle.innerText = title;
     if (placeholderDesc) placeholderDesc.innerText = desc;
     if (placeholderOverlay) placeholderOverlay.style.display = 'flex';
@@ -384,11 +389,11 @@ function checkUrlHash() {
 }
 
 function toggleMute() {
-    if (!mainVideo) return;
-    mainVideo.muted = !mainVideo.muted;
+    if (!remoteVideo) return;
+    remoteVideo.muted = !remoteVideo.muted;
     const volIcon = document.getElementById('volume-icon');
     if (volIcon) {
-        if (mainVideo.muted) {
+        if (remoteVideo.muted) {
             volIcon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>';
         } else {
             volIcon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>';
@@ -397,15 +402,15 @@ function toggleMute() {
 }
 
 function unmuteStream() {
-    if (!mainVideo) return;
-    mainVideo.muted = false;
-    mainVideo.play().then(() => {
+    if (!remoteVideo) return;
+    remoteVideo.muted = false;
+    remoteVideo.play().then(() => {
         if (unmuteBanner) unmuteBanner.style.display = 'none';
     });
 }
 
 function toggleFullscreen() {
-    if (!document.getElementById('stage-card') && document.querySelector('.stage-card')) {
+    if (!document.fullscreenElement) {
         document.querySelector('.stage-card').requestFullscreen().catch(err => {
             console.error('Error entering fullscreen:', err);
         });
