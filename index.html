@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transmissão de Tela P2P</title>
+    <!-- Biblioteca PeerJS para cuidar da sinalização WebRTC -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1e1f22;
+            color: #dbdee1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .card {
+            background-color: #2b2d31;
+            padding: 24px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 700px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-size: 20px;
+            color: #fff;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .status-box {
+            background: #111214;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            word-break: break-all;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        button {
+            background-color: #5865f2;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: #4752c4;
+        }
+
+        button.secondary {
+            background-color: #4e5058;
+        }
+
+        button.secondary:hover {
+            background-color: #6d6f78;
+        }
+
+        input {
+            flex: 1;
+            background: #1e1f22;
+            border: 1px solid #3b3e45;
+            padding: 10px 14px;
+            border-radius: 6px;
+            color: #fff;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #5865f2;
+        }
+
+        .video-container {
+            width: 100%;
+            max-width: 900px;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+        }
+
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+        <h1>Transmissão de Tela P2P</h1>
+
+        <div class="status-box">
+            <span>Seu ID: <strong id="my-id" style="color: #5865f2;">Gerando ID...</strong></span>
+            <button class="secondary" onclick="copyId()" style="padding: 6px 12px; font-size: 12px;">Copiar</button>
+        </div>
+
+        <!-- Controles de quem transmite -->
+        <div class="btn-group">
+            <button onclick="startScreenShare()">1. Compartilhar Minha Tela</button>
+        </div>
+
+        <!-- Controles de quem assiste -->
+        <div class="btn-group">
+            <input type="text" id="friend-id-input" placeholder="Cole o ID do seu amigo aqui">
+            <button class="secondary" onclick="connectToFriend()">2. Conectar e Assistir</button>
+        </div>
+    </div>
+
+    <div class="video-container">
+        <video id="remote-video" autoplay playsinline controls></video>
+    </div>
+
+    <script>
+        const peer = new Peer();
+        let localStream = null;
+
+        // Quando o servidor gratuito do PeerJS atribui um ID exclusivo
+        peer.on('open', (id) => {
+            document.getElementById('my-id').innerText = id;
+        });
+
+        // Quem assiste recebe o vídeo aqui
+        peer.on('call', (call) => {
+            call.answer(); // Atende a chamada
+            call.on('stream', (remoteStream) => {
+                const videoElement = document.getElementById('remote-video');
+                videoElement.srcObject = remoteStream;
+            });
+        });
+
+        // 1. Quem transmite clica aqui para capturar a tela
+        async function startScreenShare() {
+            try {
+                localStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: { cursor: 'always' },
+                    audio: true
+                });
+                document.getElementById('remote-video').srcObject = localStream;
+            } catch (err) {
+                alert("Erro ao selecionar a tela: " + err.message);
+            }
+        }
+
+        // 2. Quem assiste informa o ID de quem está transmitindo
+        function connectToFriend() {
+            const friendId = document.getElementById('friend-id-input').value.trim();
+            if (!friendId) {
+                alert("Por favor, informe o ID do seu amigo.");
+                return;
+            }
+
+            // Se quem está transmitindo tiver stream ativo e quiser ligar diretamente:
+            if (localStream) {
+                peer.call(friendId, localStream);
+                alert("Enviando transmissão para o amigo...");
+            } else {
+                alert("Peça para seu amigo digitar o SEU ID e clicar em 'Conectar e Assistir' após ele iniciar a tela!");
+            }
+        }
+
+        function copyId() {
+            const idText = document.getElementById('my-id').innerText;
+            if (idText && idText !== 'Gerando ID...') {
+                navigator.clipboard.writeText(idText);
+                alert("ID copiado com sucesso!");
+            }
+        }
+    </script>
+</body>
+
+</html>
