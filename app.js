@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Mamute Streamer v1.0.0
  * WebRTC P2P Screen Sharing Application
  */
@@ -36,7 +36,7 @@ function startApp() {
     bindElements();
     if (typeof Peer === 'undefined') {
         if (statusText) statusText.innerText = 'Erro ao carregar PeerJS (Verifique a internet)';
-        showToast('Erro ao carregar a biblioteca de sinalizacao PeerJS.', 'error');
+        showToast('Erro ao carregar a biblioteca de sinalização PeerJS.', 'error');
         return;
     }
     initPeer();
@@ -69,7 +69,7 @@ function initPeer() {
             if (myPeerIdEl) myPeerIdEl.innerText = id;
             if (statusDot) statusDot.className = 'status-dot online';
             if (statusText) statusText.innerText = 'Pronto para conectar';
-            showToast('Conectado a rede P2P!', 'info');
+            showToast('Conectado à rede P2P!', 'info');
             checkUrlHash();
         });
 
@@ -137,19 +137,19 @@ function initPeer() {
 
                 if (placeholderOverlay) placeholderOverlay.style.display = 'none';
                 if (liveTag) liveTag.classList.add('active');
-                if (playerInfoText) playerInfoText.innerText = 'Assistindo transmissao em tempo real';
-                showToast('Sinal de video recebido com sucesso!', 'success');
+                if (playerInfoText) playerInfoText.innerText = 'Assistindo transmissão em tempo real';
+                showToast('Sinal de vídeo recebido com sucesso!', 'success');
             });
 
             call.on('close', () => {
-                resetPlayer('Transmissao Encerrada', 'O compartilhamento de tela foi encerrado.');
+                resetPlayer('Transmissão Encerrada', 'O compartilhamento de tela foi encerrado.');
             });
         });
 
     } catch (err) {
         console.error('Failed to create PeerJS instance:', err);
-        if (statusText) statusText.innerText = 'Erro de Inicializacao';
-        showToast('Erro de inicializacao: ' + err.message, 'error');
+        if (statusText) statusText.innerText = 'Erro de Inicialização';
+        showToast('Erro de inicialização: ' + err.message, 'error');
     }
 }
 
@@ -177,7 +177,7 @@ async function startScreenShare() {
                 micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 combinedStream = mixAudioStreams(screenStream, micStream);
             } catch (micErr) {
-                showToast('Nao foi possivel acessar o microfone. Transmitindo apenas audio do sistema.', 'warning');
+                showToast('Não foi possível acessar o microfone. Transmitindo apenas áudio do sistema.', 'warning');
             }
         }
 
@@ -197,14 +197,14 @@ async function startScreenShare() {
 
         if (placeholderOverlay) placeholderOverlay.style.display = 'none';
         if (liveTag) liveTag.classList.add('active');
-        if (playerInfoText) playerInfoText.innerText = 'Sua tela esta sendo transmitida';
+        if (playerInfoText) playerInfoText.innerText = 'Sua tela está sendo transmitida';
 
         if (btnToggleShare) {
             btnToggleShare.className = 'btn btn-danger';
-            btnToggleShare.innerHTML = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg> Parar Transmissao;
+            btnToggleShare.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg> Parar Transmissão';
         }
 
-        showToast('Transmissao de tela iniciada!', 'success');
+        showToast('Transmissão de tela iniciada!', 'success');
 
         activeDataConnections.forEach(conn => {
             conn.send({ type: 'STATUS', isLive: true });
@@ -241,11 +241,11 @@ function stopScreenShare() {
 
     if (btnToggleShare) {
         btnToggleShare.className = 'btn';
-        btnToggleShare.innerHTML = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg> Iniciar Transmissao;
+        btnToggleShare.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg> Iniciar Transmissão';
     }
 
-    resetPlayer('Transmissao Parada', 'Voce encerrou a transmissao de tela.');
-    showToast('Transmissao encerrada.', 'info');
+    resetPlayer('Transmissão Parada', 'Você encerrou a transmissão de tela.');
+    showToast('Transmissão encerrada.', 'info');
 }
 
 function mixAudioStreams(screenStream, micStream) {
@@ -279,7 +279,7 @@ function connectToHost() {
     }
 
     if (hostId === myId) {
-        showToast('Voce nao pode se conectar ao seu proprio ID.', 'warning');
+        showToast('Você não pode se conectar ao seu próprio ID.', 'warning');
         return;
     }
 
@@ -290,12 +290,12 @@ function connectToHost() {
     }
 
     if (statusText) statusText.innerText = 'Conectando ao host...';
-    showToast('Solicitando transmissao de ' + hostId.substring(0, 8) + '...', 'info');
+    showToast('Solicitando transmissão de ' + hostId.substring(0, 8) + '...', 'info');
 
     const conn = peer.connect(hostId);
 
     conn.on('open', () => {
-        showToast('Conectado ao Host! Solicitando video...', 'success');
+        showToast('Conectado ao Host! Solicitando vídeo...', 'success');
         if (statusText) statusText.innerText = 'Conectado ao Host';
         conn.send({ type: 'REQUEST_STREAM' });
     });
@@ -303,19 +303,19 @@ function connectToHost() {
     conn.on('data', (data) => {
         if (data && data.type === 'STATUS') {
             if (!data.isLive) {
-                resetPlayer('Aguardando Transmissao', 'O host esta online, mas ainda nao iniciou o compartilhamento de tela.');
+                resetPlayer('Aguardando Transmissão', 'O host está online, mas ainda não iniciou o compartilhamento de tela.');
             }
         }
     });
 
     conn.on('close', () => {
-        resetPlayer('Desconectado do Host', 'A conexao com o host foi encerrada.');
-        showToast('Conexao encerrada.', 'warning');
+        resetPlayer('Desconectado do Host', 'A conexão com o host foi encerrada.');
+        showToast('Conexão encerrada.', 'warning');
     });
 
     conn.on('error', (err) => {
         console.error('Data connection error:', err);
-        showToast('Erro ao conectar ao Host. Verifique se o ID esta correto.', 'error');
+        showToast('Erro ao conectar ao Host. Verifique se o ID está correto.', 'error');
     });
 
     const mediaCall = peer.call(hostId, new MediaStream());
@@ -335,8 +335,8 @@ function connectToHost() {
 
         if (placeholderOverlay) placeholderOverlay.style.display = 'none';
         if (liveTag) liveTag.classList.add('active');
-        if (playerInfoText) playerInfoText.innerText = 'Assistindo transmissao em tempo real';
-        showToast('Transmissao de video conectada!', 'success');
+        if (playerInfoText) playerInfoText.innerText = 'Assistindo transmissão em tempo real';
+        showToast('Transmissão de vídeo conectada!', 'success');
     });
 
     mediaCall.on('error', (err) => {
@@ -360,7 +360,7 @@ function copyMyId() {
         return;
     }
     navigator.clipboard.writeText(myId);
-    showToast('ID copiado para a area de transferencia!', 'success');
+    showToast('ID copiado para a área de transferência!', 'success');
 }
 
 function copyShareLink() {
@@ -370,7 +370,7 @@ function copyShareLink() {
     }
     const url = window.location.origin + window.location.pathname + '#' + myId;
     navigator.clipboard.writeText(url);
-    showToast('Link de transmissao copiado!', 'success');
+    showToast('Link de transmissão copiado!', 'success');
 }
 
 function checkUrlHash() {
@@ -389,9 +389,9 @@ function toggleMute() {
     const volIcon = document.getElementById('volume-icon');
     if (volIcon) {
         if (mainVideo.muted) {
-            volIcon.innerHTML = <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>;
+            volIcon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>';
         } else {
-            volIcon.innerHTML = <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>;
+            volIcon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>';
         }
     }
 }
@@ -405,7 +405,7 @@ function unmuteStream() {
 }
 
 function toggleFullscreen() {
-    if (!document.fullscreenElement) {
+    if (!document.getElementById('stage-card') && document.querySelector('.stage-card')) {
         document.querySelector('.stage-card').requestFullscreen().catch(err => {
             console.error('Error entering fullscreen:', err);
         });
@@ -441,10 +441,7 @@ function showToast(msg, type = 'info') {
     if (type === 'warning') iconColor = '#f59e0b';
     if (type === 'error') iconColor = '#ef4444';
 
-    toast.innerHTML = 
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-        <span></span>
-    ;
+    toast.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="' + iconColor + '" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg><span>' + msg + '</span>';
 
     container.appendChild(toast);
     setTimeout(() => {
