@@ -622,24 +622,41 @@
         let isBroadcasting = false;
 
         // Elements
-        const statusDot = document.getElementById('status-dot');
-        const statusText = document.getElementById('status-text');
-        const myPeerIdEl = document.getElementById('my-peer-id');
-        const mainVideo = document.getElementById('main-video');
-        const placeholderOverlay = document.getElementById('placeholder-overlay');
-        const placeholderTitle = document.getElementById('placeholder-title');
-        const placeholderDesc = document.getElementById('placeholder-desc');
-        const liveTag = document.getElementById('live-tag');
-        const playerInfoText = document.getElementById('player-info-text');
-        const viewerCountEl = document.getElementById('viewer-count');
-        const btnToggleShare = document.getElementById('btn-toggle-share');
-        const unmuteBanner = document.getElementById('unmute-banner');
+        let statusDot, statusText, myPeerIdEl, mainVideo, placeholderOverlay;
+        let placeholderTitle, placeholderDesc, liveTag, playerInfoText;
+        let viewerCountEl, btnToggleShare, unmuteBanner;
 
-        // Initialization
-        window.addEventListener('DOMContentLoaded', () => {
+        function bindElements() {
+            statusDot = document.getElementById('status-dot');
+            statusText = document.getElementById('status-text');
+            myPeerIdEl = document.getElementById('my-peer-id');
+            mainVideo = document.getElementById('main-video');
+            placeholderOverlay = document.getElementById('placeholder-overlay');
+            placeholderTitle = document.getElementById('placeholder-title');
+            placeholderDesc = document.getElementById('placeholder-desc');
+            liveTag = document.getElementById('live-tag');
+            playerInfoText = document.getElementById('player-info-text');
+            viewerCountEl = document.getElementById('viewer-count');
+            btnToggleShare = document.getElementById('btn-toggle-share');
+            unmuteBanner = document.getElementById('unmute-banner');
+        }
+
+        function startApp() {
+            bindElements();
+            if (typeof Peer === 'undefined') {
+                if (statusText) statusText.innerText = 'Erro ao carregar PeerJS (Verifique a internet)';
+                showToast('Erro ao carregar a biblioteca de sinalização PeerJS.', 'error');
+                return;
+            }
             initPeer();
             checkUrlHash();
-        });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', startApp);
+        } else {
+            startApp();
+        }
 
         // PeerJS Setup with STUN servers
         function initPeer() {
@@ -658,19 +675,20 @@
 
             peer.on('open', (id) => {
                 myId = id;
-                myPeerIdEl.innerText = id;
-                statusDot.className = 'status-dot online';
-                statusText.innerText = 'Pronto para conectar';
+                if (myPeerIdEl) myPeerIdEl.innerText = id;
+                if (statusDot) statusDot.className = 'status-dot online';
+                if (statusText) statusText.innerText = 'Pronto para conectar';
                 showToast('Servidor de sinalização conectado!', 'info');
 
-                // If Hash had a host ID, suggest connecting
                 checkUrlHash();
             });
 
             peer.on('disconnected', () => {
-                statusDot.className = 'status-dot offline';
-                statusText.innerText = 'Desconectado (Reconectando...)';
-                peer.reconnect();
+                if (statusDot) statusDot.className = 'status-dot offline';
+                if (statusText) statusText.innerText = 'Desconectado (Reconectando...)';
+                if (peer && !peer.destroyed) {
+                    peer.reconnect();
+                }
             });
 
             peer.on('error', (err) => {
@@ -705,20 +723,21 @@
                 call.answer(); // Answer incoming stream call
 
                 call.on('stream', (remoteStream) => {
-                    mainVideo.srcObject = remoteStream;
-                    mainVideo.muted = false; // Unmute remote stream by default
+                    if (mainVideo) {
+                        mainVideo.srcObject = remoteStream;
+                        mainVideo.muted = false; // Unmute remote stream by default
 
-                    // Try playing
-                    mainVideo.play().then(() => {
-                        unmuteBanner.style.display = 'none';
-                    }).catch(err => {
-                        console.warn('Autoplay blocked by browser policy:', err);
-                        unmuteBanner.style.display = 'flex';
-                    });
+                        mainVideo.play().then(() => {
+                            if (unmuteBanner) unmuteBanner.style.display = 'none';
+                        }).catch(err => {
+                            console.warn('Autoplay blocked by browser policy:', err);
+                            if (unmuteBanner) unmuteBanner.style.display = 'flex';
+                        });
+                    }
 
-                    placeholderOverlay.style.display = 'none';
-                    liveTag.classList.add('active');
-                    playerInfoText.innerText = 'Assistindo transmissão de ' + call.peer.substring(0, 8) + '...';
+                    if (placeholderOverlay) placeholderOverlay.style.display = 'none';
+                    if (liveTag) liveTag.classList.add('active');
+                    if (playerInfoText) playerInfoText.innerText = 'Assistindo transmissão de ' + call.peer.substring(0, 8) + '...';
                     showToast('Transmissão recebida com sucesso!', 'success');
                 });
 
@@ -748,7 +767,8 @@
                 let combinedStream = screenStream;
 
                 // 2. Check if Mic mixing requested
-                const includeMic = document.getElementById('include-mic').checked;
+                const includeMicEl = document.getElementById('include-mic');
+                const includeMic = includeMicEl ? includeMicEl.checked : false;
                 if (includeMic) {
                     try {
                         micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -768,16 +788,20 @@
                 };
 
                 // Show local preview (muted to prevent echo)
-                mainVideo.srcObject = localStream;
-                mainVideo.muted = true;
-                mainVideo.play();
+                if (mainVideo) {
+                    mainVideo.srcObject = localStream;
+                    mainVideo.muted = true;
+                    mainVideo.play();
+                }
 
-                placeholderOverlay.style.display = 'none';
-                liveTag.classList.add('active');
-                playerInfoText.innerText = 'Sua tela está sendo transmitida';
+                if (placeholderOverlay) placeholderOverlay.style.display = 'none';
+                if (liveTag) liveTag.classList.add('active');
+                if (playerInfoText) playerInfoText.innerText = 'Sua tela está sendo transmitida';
 
-                btnToggleShare.className = 'btn btn-danger';
-                btnToggleShare.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg> Parar Transmissão`;
+                if (btnToggleShare) {
+                    btnToggleShare.className = 'btn btn-danger';
+                    btnToggleShare.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg> Parar Transmissão`;
+                }
 
                 showToast('Transmissão de tela iniciada!', 'success');
 
@@ -816,8 +840,10 @@
             activeMediaCalls.forEach(call => call.close());
             activeMediaCalls.clear();
 
-            btnToggleShare.className = 'btn';
-            btnToggleShare.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg> Iniciar Transmissão`;
+            if (btnToggleShare) {
+                btnToggleShare.className = 'btn';
+                btnToggleShare.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg> Iniciar Transmissão`;
+            }
 
             resetPlayer('Transmissão Parada', 'Você encerrou a transmissão de tela.');
             showToast('Transmissão encerrada.', 'info');
@@ -848,7 +874,8 @@
 
         // Viewer: Connect to Host
         function connectToHost() {
-            const hostId = document.getElementById('host-id-input').value.trim();
+            const hostInput = document.getElementById('host-id-input');
+            const hostId = hostInput ? hostInput.value.trim() : '';
             if (!hostId) {
                 showToast('Por favor, digite ou cole o ID do Host.', 'warning');
                 return;
@@ -859,7 +886,7 @@
                 return;
             }
 
-            statusText.innerText = 'Conectando ao host...';
+            if (statusText) statusText.innerText = 'Conectando ao host...';
             showToast('Conectando a ' + hostId + '...', 'info');
 
             // Connect data channel to Host
@@ -867,7 +894,7 @@
 
             conn.on('open', () => {
                 showToast('Conectado ao Host! Aguardando vídeo...', 'success');
-                statusText.innerText = 'Conectado ao Host';
+                if (statusText) statusText.innerText = 'Conectado ao Host';
             });
 
             conn.on('data', (data) => {
@@ -882,28 +909,38 @@
                 resetPlayer('Desconectado do Host', 'A conexão com o host foi encerrada.');
                 showToast('Conexão encerrada.', 'warning');
             });
+
+            conn.on('error', (err) => {
+                showToast('Erro na conexão com o Host: ' + err, 'error');
+            });
         }
 
         // Reset player UI state
         function resetPlayer(title, desc) {
-            mainVideo.srcObject = null;
-            placeholderTitle.innerText = title;
-            placeholderDesc.innerText = desc;
-            placeholderOverlay.style.display = 'flex';
-            liveTag.classList.remove('active');
-            playerInfoText.innerText = 'Sem sinal';
-            unmuteBanner.style.display = 'none';
+            if (mainVideo) mainVideo.srcObject = null;
+            if (placeholderTitle) placeholderTitle.innerText = title;
+            if (placeholderDesc) placeholderDesc.innerText = desc;
+            if (placeholderOverlay) placeholderOverlay.style.display = 'flex';
+            if (liveTag) liveTag.classList.remove('active');
+            if (playerInfoText) playerInfoText.innerText = 'Sem sinal';
+            if (unmuteBanner) unmuteBanner.style.display = 'none';
         }
 
         // Copy functions
         function copyMyId() {
-            if (!myId) return;
+            if (!myId) {
+                showToast('Aguarde o ID ser gerado...', 'warning');
+                return;
+            }
             navigator.clipboard.writeText(myId);
             showToast('ID copiado para a área de transferência!', 'success');
         }
 
         function copyShareLink() {
-            if (!myId) return;
+            if (!myId) {
+                showToast('Aguarde o ID ser gerado...', 'warning');
+                return;
+            }
             const url = window.location.origin + window.location.pathname + '#' + myId;
             navigator.clipboard.writeText(url);
             showToast('Link de transmissão copiado!', 'success');
@@ -913,7 +950,8 @@
         function checkUrlHash() {
             const hash = window.location.hash.replace('#', '').trim();
             if (hash && hash.length > 5) {
-                document.getElementById('host-id-input').value = hash;
+                const hostInput = document.getElementById('host-id-input');
+                if (hostInput) hostInput.value = hash;
                 switchTab('viewer');
                 showToast('ID do Host carregado pelo link da URL!', 'info');
             }
@@ -921,19 +959,23 @@
 
         // Player controls
         function toggleMute() {
+            if (!mainVideo) return;
             mainVideo.muted = !mainVideo.muted;
             const volIcon = document.getElementById('volume-icon');
-            if (mainVideo.muted) {
-                volIcon.innerHTML = `<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>`;
-            } else {
-                volIcon.innerHTML = `<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>`;
+            if (volIcon) {
+                if (mainVideo.muted) {
+                    volIcon.innerHTML = `<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>`;
+                } else {
+                    volIcon.innerHTML = `<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>`;
+                }
             }
         }
 
         function unmuteStream() {
+            if (!mainVideo) return;
             mainVideo.muted = false;
             mainVideo.play().then(() => {
-                unmuteBanner.style.display = 'none';
+                if (unmuteBanner) unmuteBanner.style.display = 'none';
             });
         }
 
@@ -949,20 +991,26 @@
 
         // Helper: Tab Switching
         function switchTab(tab) {
-            document.getElementById('tab-btn-host').classList.toggle('active', tab === 'host');
-            document.getElementById('tab-btn-viewer').classList.toggle('active', tab === 'viewer');
-            document.getElementById('tab-host').classList.toggle('active', tab === 'host');
-            document.getElementById('tab-viewer').classList.toggle('active', tab === 'viewer');
+            const btnHost = document.getElementById('tab-btn-host');
+            const btnViewer = document.getElementById('tab-btn-viewer');
+            const tabHost = document.getElementById('tab-host');
+            const tabViewer = document.getElementById('tab-viewer');
+
+            if (btnHost) btnHost.classList.toggle('active', tab === 'host');
+            if (btnViewer) btnViewer.classList.toggle('active', tab === 'viewer');
+            if (tabHost) tabHost.classList.toggle('active', tab === 'host');
+            if (tabViewer) tabViewer.classList.toggle('active', tab === 'viewer');
         }
 
         // Helper: Update Viewer Count
         function updateViewerCount() {
-            viewerCountEl.innerText = activeDataConnections.size;
+            if (viewerCountEl) viewerCountEl.innerText = activeDataConnections.size;
         }
 
         // Toast notification system
         function showToast(msg, type = 'info') {
             const container = document.getElementById('toast-container');
+            if (!container) return;
             const toast = document.createElement('div');
             toast.className = 'toast';
 
