@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mamute Streamer - Transmissão de Tela P2P HD</title>
+    <title>Mamute Streamer v1.0.0 - TransmissÃ£o de Tela P2P HD</title>
     <!-- PeerJS WebRTC Signaling Library -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -70,8 +70,16 @@
             -webkit-text-fill-color: transparent;
         }
 
-        .logo svg {
-            color: #6366f1;
+        .version-badge {
+            font-size: 11px;
+            background: rgba(99, 102, 241, 0.2);
+            color: #a5b4fc;
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+            -webkit-text-fill-color: initial;
         }
 
         .peer-status-badge {
@@ -489,6 +497,15 @@
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
+
+        footer {
+            margin-top: 32px;
+            font-size: 12px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
     </style>
 </head>
 
@@ -502,6 +519,7 @@
                 <line x1="12" y1="17" x2="12" y2="21"></line>
             </svg>
             Mamute Streamer
+            <span class="version-badge">v1.0.0</span>
         </div>
         <div class="peer-status-badge">
             <span class="status-dot" id="status-dot"></span>
@@ -526,7 +544,7 @@
             <!-- Host Panel -->
             <div class="tab-content active" id="tab-host">
                 <div class="info-box">
-                    <span class="info-label">Seu ID de Transmissão</span>
+                    <span class="info-label">Seu ID de TransmissÃ£o</span>
                     <div class="id-display-row">
                         <span class="id-text" id="my-peer-id">Aguardando...</span>
                     </div>
@@ -544,12 +562,12 @@
                 </div>
 
                 <label class="checkbox-label">
-                    <input type="checkbox" id="include-mic"> Incluir Áudio do Microfone
+                    <input type="checkbox" id="include-mic"> Incluir Ãudio do Microfone
                 </label>
 
                 <button class="btn" id="btn-toggle-share" onclick="toggleScreenShare()">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
-                    Iniciar Transmissão
+                    Iniciar TransmissÃ£o
                 </button>
 
                 <div class="info-box" style="margin-top: 8px;">
@@ -561,8 +579,8 @@
             <!-- Viewer Panel -->
             <div class="tab-content" id="tab-viewer">
                 <div class="input-group">
-                    <label for="host-id-input">ID da Transmissão (Host)</label>
-                    <input type="text" id="host-id-input" placeholder="Ex: mamute-123456" />
+                    <label for="host-id-input">ID da TransmissÃ£o (Host)</label>
+                    <input type="text" id="host-id-input" placeholder="Ex: cole-o-id-aqui" />
                 </div>
 
                 <button class="btn" id="btn-connect-host" onclick="connectToHost()">
@@ -579,13 +597,13 @@
                     <div class="placeholder-icon">
                         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
                     </div>
-                    <h2 id="placeholder-title">Nenhuma Transmissão Ativa</h2>
-                    <p id="placeholder-desc">Inicie o compartilhamento na aba 'Transmitir' ou insira o ID de um amigo na aba 'Assistir' para começar.</p>
+                    <h2 id="placeholder-title">Nenhuma TransmissÃ£o Ativa</h2>
+                    <p id="placeholder-desc">Inicie o compartilhamento na aba 'Transmitir' ou insira o ID de um amigo na aba 'Assistir' para comeÃ§ar.</p>
                 </div>
 
                 <div class="unmute-banner" id="unmute-banner" style="display: none;" onclick="unmuteStream()">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
-                    Clique aqui para ativar o áudio
+                    Clique aqui para ativar o Ã¡udio
                 </div>
 
                 <video id="main-video" autoplay playsinline></video>
@@ -607,6 +625,10 @@
             </div>
         </div>
     </main>
+
+    <footer>
+        Mamute Streamer P2P &bull; VersÃ£o 1.0.0 &bull; WebRTC High Performance
+    </footer>
 
     <div class="toast-container" id="toast-container"></div>
 
@@ -645,7 +667,7 @@
             bindElements();
             if (typeof Peer === 'undefined') {
                 if (statusText) statusText.innerText = 'Erro ao carregar PeerJS (Verifique a internet)';
-                showToast('Erro ao carregar a biblioteca de sinalização PeerJS.', 'error');
+                showToast('Erro ao carregar a biblioteca de sinalizaÃ§Ã£o PeerJS.', 'error');
                 return;
             }
             initPeer();
@@ -658,9 +680,8 @@
             startApp();
         }
 
-        // PeerJS Setup with STUN servers
+        // PeerJS Setup with comprehensive STUN/TURN servers for WebRTC NAT traversal across all networks
         function initPeer() {
-            // Using Google Public STUN servers for reliable NAT traversal across Netlify/HTTPS
             peer = new Peer({
                 config: {
                     iceServers: [
@@ -668,7 +689,8 @@
                         { urls: 'stun:stun1.l.google.com:19302' },
                         { urls: 'stun:stun2.l.google.com:19302' },
                         { urls: 'stun:stun3.l.google.com:19302' },
-                        { urls: 'stun:stun4.l.google.com:19302' }
+                        { urls: 'stun:stun4.l.google.com:19302' },
+                        { urls: 'stun:global.stun.twilio.com:3478' }
                     ]
                 }
             });
@@ -678,7 +700,7 @@
                 if (myPeerIdEl) myPeerIdEl.innerText = id;
                 if (statusDot) statusDot.className = 'status-dot online';
                 if (statusText) statusText.innerText = 'Pronto para conectar';
-                showToast('Servidor de sinalização conectado!', 'info');
+                showToast('Conectado Ã  rede P2P!', 'info');
 
                 checkUrlHash();
             });
@@ -693,21 +715,30 @@
 
             peer.on('error', (err) => {
                 console.error('PeerJS error:', err);
-                showToast('Erro de conexão: ' + err.type, 'error');
+                showToast('Erro de rede: ' + err.type, 'error');
             });
 
-            // Handle incoming Data Connection (Viewer asking to watch stream)
+            // Handle incoming Data Connections
             peer.on('connection', (conn) => {
                 activeDataConnections.add(conn);
                 updateViewerCount();
 
                 conn.on('open', () => {
-                    // Send current status to viewer
+                    // Send status update
                     conn.send({ type: 'STATUS', isLive: isBroadcasting });
                     if (isBroadcasting && localStream) {
-                        // Call viewer with stream
+                        // Directly call viewer with stream
                         const mediaCall = peer.call(conn.peer, localStream);
                         activeMediaCalls.add(mediaCall);
+                    }
+                });
+
+                conn.on('data', (data) => {
+                    if (data && data.type === 'REQUEST_STREAM') {
+                        if (isBroadcasting && localStream) {
+                            const mediaCall = peer.call(conn.peer, localStream);
+                            activeMediaCalls.add(mediaCall);
+                        }
                     }
                 });
 
@@ -717,15 +748,23 @@
                 });
             });
 
-            // Handle incoming Media Call (Viewer receiving stream from Host)
+            // Handle incoming Media Calls (Host answers call from Viewer, OR Viewer receives stream from Host)
             peer.on('call', (call) => {
                 activeMediaConnection = call;
-                call.answer(); // Answer incoming stream call
+
+                if (isBroadcasting && localStream) {
+                    // We are Host: Answer viewer's call by sending our local screen stream!
+                    call.answer(localStream);
+                } else {
+                    // We are Viewer: Answer host's incoming stream call
+                    call.answer();
+                }
 
                 call.on('stream', (remoteStream) => {
+                    // We received the remote video stream!
                     if (mainVideo) {
                         mainVideo.srcObject = remoteStream;
-                        mainVideo.muted = false; // Unmute remote stream by default
+                        mainVideo.muted = false;
 
                         mainVideo.play().then(() => {
                             if (unmuteBanner) unmuteBanner.style.display = 'none';
@@ -737,12 +776,12 @@
 
                     if (placeholderOverlay) placeholderOverlay.style.display = 'none';
                     if (liveTag) liveTag.classList.add('active');
-                    if (playerInfoText) playerInfoText.innerText = 'Assistindo transmissão de ' + call.peer.substring(0, 8) + '...';
-                    showToast('Transmissão recebida com sucesso!', 'success');
+                    if (playerInfoText) playerInfoText.innerText = 'Assistindo transmissÃ£o em tempo real';
+                    showToast('Sinal de vÃ­deo recebido com sucesso!', 'success');
                 });
 
                 call.on('close', () => {
-                    resetPlayer('Transmissão Encerrada', 'O host encerrou o compartilhamento de tela.');
+                    resetPlayer('TransmissÃ£o Encerrada', 'O compartilhamento de tela foi encerrado.');
                 });
             });
         }
@@ -774,14 +813,14 @@
                         micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                         combinedStream = mixAudioStreams(screenStream, micStream);
                     } catch (micErr) {
-                        showToast('Não foi possível acessar o microfone. Transmitindo apenas áudio do sistema.', 'warning');
+                        showToast('NÃ£o foi possÃ­vel acessar o microfone. Transmitindo apenas Ã¡udio do sistema.', 'warning');
                     }
                 }
 
                 localStream = combinedStream;
                 isBroadcasting = true;
 
-                // Handle screen share stop via browser UI
+                // Handle screen share stop via browser native UI bar
                 const videoTrack = screenStream.getVideoTracks()[0];
                 videoTrack.onended = () => {
                     stopScreenShare();
@@ -796,14 +835,14 @@
 
                 if (placeholderOverlay) placeholderOverlay.style.display = 'none';
                 if (liveTag) liveTag.classList.add('active');
-                if (playerInfoText) playerInfoText.innerText = 'Sua tela está sendo transmitida';
+                if (playerInfoText) playerInfoText.innerText = 'Sua tela estÃ¡ sendo transmitida';
 
                 if (btnToggleShare) {
                     btnToggleShare.className = 'btn btn-danger';
-                    btnToggleShare.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg> Parar Transmissão`;
+                    btnToggleShare.innerHTML = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg> Parar TransmissÃ£o;
                 }
 
-                showToast('Transmissão de tela iniciada!', 'success');
+                showToast('TransmissÃ£o de tela iniciada!', 'success');
 
                 // Call all connected viewers
                 activeDataConnections.forEach(conn => {
@@ -842,11 +881,11 @@
 
             if (btnToggleShare) {
                 btnToggleShare.className = 'btn';
-                btnToggleShare.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg> Iniciar Transmissão`;
+                btnToggleShare.innerHTML = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg> Iniciar TransmissÃ£o;
             }
 
-            resetPlayer('Transmissão Parada', 'Você encerrou a transmissão de tela.');
-            showToast('Transmissão encerrada.', 'info');
+            resetPlayer('TransmissÃ£o Parada', 'VocÃª encerrou a transmissÃ£o de tela.');
+            showToast('TransmissÃ£o encerrada.', 'info');
         }
 
         // Mix screen audio + mic audio using Web Audio API
@@ -882,36 +921,72 @@
             }
 
             if (hostId === myId) {
-                showToast('Você não pode se conectar ao seu próprio ID.', 'warning');
+                showToast('VocÃª nÃ£o pode se conectar ao seu prÃ³prio ID.', 'warning');
+                return;
+            }
+
+            if (!peer || peer.disconnected) {
+                showToast('Reconectando ao servidor...', 'warning');
+                if (peer) peer.reconnect();
                 return;
             }
 
             if (statusText) statusText.innerText = 'Conectando ao host...';
-            showToast('Conectando a ' + hostId + '...', 'info');
+            showToast('Solicitando transmissÃ£o de ' + hostId.substring(0, 8) + '...', 'info');
 
-            // Connect data channel to Host
+            // 1. Establish Data Connection for status/ping
             const conn = peer.connect(hostId);
 
             conn.on('open', () => {
-                showToast('Conectado ao Host! Aguardando vídeo...', 'success');
+                showToast('Conectado ao Host! Solicitando vÃ­deo...', 'success');
                 if (statusText) statusText.innerText = 'Conectado ao Host';
+                conn.send({ type: 'REQUEST_STREAM' });
             });
 
             conn.on('data', (data) => {
-                if (data.type === 'STATUS') {
+                if (data && data.type === 'STATUS') {
                     if (!data.isLive) {
-                        resetPlayer('Aguardando Transmissão', 'O host está online, mas ainda não iniciou o compartilhamento de tela.');
+                        resetPlayer('Aguardando TransmissÃ£o', 'O host estÃ¡ online, mas ainda nÃ£o iniciou o compartilhamento de tela.');
                     }
                 }
             });
 
             conn.on('close', () => {
-                resetPlayer('Desconectado do Host', 'A conexão com o host foi encerrada.');
-                showToast('Conexão encerrada.', 'warning');
+                resetPlayer('Desconectado do Host', 'A conexÃ£o com o host foi encerrada.');
+                showToast('ConexÃ£o encerrada.', 'warning');
             });
 
             conn.on('error', (err) => {
-                showToast('Erro na conexão com o Host: ' + err, 'error');
+                console.error('Data connection error:', err);
+                showToast('Erro ao conectar ao Host. Verifique se o ID estÃ¡ correto.', 'error');
+            });
+
+            // 2. Direct Call to Host (Viewer calls Host to request stream!)
+            // When Host receives this call and is streaming, Host answers returning localStream.
+            const mediaCall = peer.call(hostId, new MediaStream()); // Initiate call
+            activeMediaConnection = mediaCall;
+
+            mediaCall.on('stream', (remoteStream) => {
+                if (mainVideo) {
+                    mainVideo.srcObject = remoteStream;
+                    mainVideo.muted = false;
+
+                    mainVideo.play().then(() => {
+                        if (unmuteBanner) unmuteBanner.style.display = 'none';
+                    }).catch(err => {
+                        console.warn('Autoplay blocked by browser policy:', err);
+                        if (unmuteBanner) unmuteBanner.style.display = 'flex';
+                    });
+                }
+
+                if (placeholderOverlay) placeholderOverlay.style.display = 'none';
+                if (liveTag) liveTag.classList.add('active');
+                if (playerInfoText) playerInfoText.innerText = 'Assistindo transmissÃ£o em tempo real';
+                showToast('TransmissÃ£o de vÃ­deo conectada!', 'success');
+            });
+
+            mediaCall.on('error', (err) => {
+                console.error('Media call error:', err);
             });
         }
 
@@ -933,7 +1008,7 @@
                 return;
             }
             navigator.clipboard.writeText(myId);
-            showToast('ID copiado para a área de transferência!', 'success');
+            showToast('ID copiado para a Ã¡rea de transferÃªncia!', 'success');
         }
 
         function copyShareLink() {
@@ -943,7 +1018,7 @@
             }
             const url = window.location.origin + window.location.pathname + '#' + myId;
             navigator.clipboard.writeText(url);
-            showToast('Link de transmissão copiado!', 'success');
+            showToast('Link de transmissÃ£o copiado!', 'success');
         }
 
         // Check if URL Hash contains Host ID
@@ -964,9 +1039,9 @@
             const volIcon = document.getElementById('volume-icon');
             if (volIcon) {
                 if (mainVideo.muted) {
-                    volIcon.innerHTML = `<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>`;
+                    volIcon.innerHTML = <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>;
                 } else {
-                    volIcon.innerHTML = `<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>`;
+                    volIcon.innerHTML = <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>;
                 }
             }
         }
@@ -1019,10 +1094,10 @@
             if (type === 'warning') iconColor = '#f59e0b';
             if (type === 'error') iconColor = '#ef4444';
 
-            toast.innerHTML = `
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                <span>${msg}</span>
-            `;
+            toast.innerHTML = 
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                <span></span>
+            ;
 
             container.appendChild(toast);
             setTimeout(() => {
